@@ -2,8 +2,6 @@ Generate CA private key:
 
     openssl genrsa -out private/cakey.pem 4096
 
-Generate root CA self-signed certificate:
-
 Compute the public key given the private key
 
     openssl rsa -in private/cakey.pem -pubout
