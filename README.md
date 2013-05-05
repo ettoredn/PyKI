@@ -10,4 +10,4 @@ Compute the public key given the private key
 
 Generate self-signed root CA x.509 certificate
 
-    openssl req -config openssl.conf -new -key private/cakey.pem -x509 -out selfsignedRootCAcert.pem
+    openssl req -config openssl.conf -new -key private/cakey.pem -x509 -out certificate.pem
