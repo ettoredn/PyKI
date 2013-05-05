@@ -1,1 +1,6 @@
-This file was created by PyCharm 2.7.1 for binding GitHub repository
+Generate CA private key:
+
+    openssl genrsa -out cakey.pem 4096
+
+Generate root CA self-signed certificate:
+
