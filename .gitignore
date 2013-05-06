@@ -1,1 +1,6 @@
 .idea/
+tmp/
+openssl/CA/crl/
+openssl/CA/newcerts/
+openssl/CA/index*
+openssl/CA/serial*
