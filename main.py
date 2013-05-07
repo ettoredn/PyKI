@@ -1,5 +1,6 @@
 __author__ = 'ettore'
 
+import openssl
 from bottle import route, view, run, template, request
 
 # SPKAC challenge i.e. certificate request challenge
@@ -15,6 +16,8 @@ def index():
 @route('/generate', method='POST')
 def generate():
     type = request.forms.get('type')
+    email = request.forms.get('email')
+    dns = request.forms.get('dns')
     commonName = request.forms.get('common_name')
     organization = request.forms.get('organization')
     locality = request.forms.get('locality')
@@ -23,18 +26,8 @@ def generate():
     # DER encoded
     spkac = request.forms.get('key')
 
-    # Generate text file in SPKAC FORMAT as specified in openssl ca
-    spkacFile = open('tmp/spkacFile.txt', 'w')
-    spkacRequest = 'SPKAC={}\nCN={}\nO={}\nL={}\nC={}'.format(spkac, commonName, organization, locality, country)
-    spkacFile.write(spkacRequest)
-    spkacFile.close()
-
-    # Sign the request using openssl ca -config openssl/CA/ca-sign.conf -spkac tmp/spkacFile.txt -batch -extensions smime
     # redirect the user to /show/<certificate hash>
-
-    return template("""
-    <div>SPKAC: {{ pubKey }}</div>
-    """, pubKey=spkac)
+    return openssl.signSPKAC(spkac, type, email=email, DNS=dns, CN=commonName, O=organization, L=locality, C=country)
 
 
 @route('/hello/<name>')

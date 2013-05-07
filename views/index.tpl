@@ -17,6 +17,10 @@
     </select>
     <label for="key">Encryption</label>
     <keygen name="key" challenge="{{ challenge }}">
+    <label for="dns">Website DNS</label>
+    <input type="text" name="dns">
+    <label for="email">E-mail</label>
+    <input type="text" name="email">
     <label for="common_name">Common Name</label>
     <input type="text" name="common_name">
     <label for="organization">Organization</label>

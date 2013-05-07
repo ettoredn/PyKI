@@ -1,6 +1,8 @@
+.DS_Store
 .idea/
+__pycache__/
 tmp/
-openssl/CA/crl/
-openssl/CA/newcerts/
-openssl/CA/index*
-openssl/CA/serial*
+conf/CA/crl/
+conf/CA/newcerts/
+conf/CA/index*
+conf/CA/serial*
