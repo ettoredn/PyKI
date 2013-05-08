@@ -13,7 +13,7 @@
     <select name="type">
         <option value="smime">E-Mail</option>
         <option value="sslserver">Website</option>
-        <option value="codesigning">Code Signing</option>
+        <option value="codesign">Code Signing</option>
     </select>
     <label for="key">Encryption</label>
     <keygen name="key" challenge="{{ challenge }}">

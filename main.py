@@ -1,7 +1,10 @@
 __author__ = 'ettore'
 
 import openssl
-from bottle import route, view, run, template, request
+from bottle import install, route, view, run, request, template
+from bottle_sqlite import SQLitePlugin
+
+install(SQLitePlugin(dbfile='certificates.db'))
 
 # SPKAC challenge i.e. certificate request challenge
 challenge = "Should be a random generated string"
@@ -14,7 +17,7 @@ def index():
 
 
 @route('/generate', method='POST')
-def generate():
+def generate(db):
     type = request.forms.get('type')
     email = request.forms.get('email')
     dns = request.forms.get('dns')
@@ -26,12 +29,33 @@ def generate():
     # DER encoded
     spkac = request.forms.get('key')
 
+    # Calculate serial
+    res = db.execute('SELECT COUNT(*) AS count FROM certificates')
+    certSerial = '{:02d}'.format(int(res.fetchone()['count']) + 1, 'utf-8')
+
+    print('Serial: {}'.format(certSerial))
+
+    PEMCert = openssl.signSPKAC(spkac, type, certSerial, email=email, DNS=dns, CN=commonName, O=organization, L=locality, C=country)
+    certFingerprint = openssl.x509Fingerprint(PEMCert)
+    certHash = openssl.x509SubjectHash(PEMCert)
+
+    # Store into the database
+    db.execute('INSERT INTO certificates (serial,fingerprint,subject_hash,certificate) VALUES(?, ?, ?, ?)',
+               (certSerial, certFingerprint, certHash, PEMCert))
+
     # redirect the user to /show/<certificate hash>
-    return openssl.signSPKAC(spkac, type, email=email, DNS=dns, CN=commonName, O=organization, L=locality, C=country)
+    return '<pre>Certificate:\n{}\n\nSubject Hash: {}\nFingerprint: {}'.format(PEMCert, certHash, certFingerprint)
 
 
-@route('/hello/<name>')
-def hello(name='Guest'):
-    return template('Hello {{ name }}', name=name)
+@route('/show/:serial', method='GET')
+def show(serial, db):
+    if not serial:
+        return
+
+    res = db.execute('SELECT * FROM certificates WHERE serial = ?', serial)
+    certificate = res.fetchone()
+
+    return template('show', certificate=certificate['certificate'])
+
 
 run(host='localhost', port='8080', debug=True)

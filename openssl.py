@@ -1,4 +1,4 @@
-from subprocess import check_output, CalledProcessError
+from subprocess import check_output, Popen, CalledProcessError, PIPE
 import os
 
 # TODO Move to configuration file
@@ -28,19 +28,19 @@ __x509Extensions = {
 }
 
 
-def signSPKAC(SPKAC, certificateType, email=None, DNS=None, CN=None, O=None, L=None, C=None):
+def signSPKAC(SPKAC, certificateType, serial, email=None, DNS=None, CN=None, O=None, L=None, C=None):
     # SSL Server
     if certificateType == 'sslserver':
         if not DNS:
             raise Exception('DNS cannot be null when requesting an SSL server certificate')
-        # Force CN = DNS
+            # Force CN = DNS
         CN = DNS
 
     # S/MIME
     elif certificateType == 'smime':
         if not email:
             raise Exception('email cannot be null when requesting an S/MIME certificate')
-        # Force CN = email
+            # Force CN = email
         CN = email
 
     # Generate SPKAC text file
@@ -55,20 +55,22 @@ def signSPKAC(SPKAC, certificateType, email=None, DNS=None, CN=None, O=None, L=N
     extFile.close()
 
     # Clear CA database
-    os.remove('conf/CA/newcerts/01.pem')
-    os.remove('conf/CA/index.txt.attr')
-    os.remove('conf/CA/index.txt.old')
-    os.remove('conf/CA/serial.old')
+    # try:
+    #     os.remove('conf/CA/index.txt.attr')
+    #     os.remove('conf/CA/index.txt.old')
+    #     os.remove('conf/CA/serial.old')
+    # except FileNotFoundError as e:
+    #     print(e)
     serialFile = open('conf/CA/serial', 'w')
-    serialFile.write('01')
+    serialFile.write(serial + '\n')
     serialFile.close()
-    indexFile = open('conf/CA/index.txt', 'w')
-    indexFile.write('')
-    indexFile.close()
+    # indexFile = open('conf/CA/index.txt', 'w')
+    # indexFile.write('')
+    # indexFile.close()
 
-    # Sign the request using conf ca -config conf/CA/ca-sign.conf -spkac tmp/spkacFile.txt -batch -extensions smime
+    # Sign the request
     try:
-        certificate = check_output([__OpenSSLBin, 'ca',
+        check_output([__OpenSSLBin, 'ca',
                       '-config', __OpenSSLConfig,
                       '-spkac', 'tmp/spkac.txt',
                       '-batch',
@@ -77,9 +79,64 @@ def signSPKAC(SPKAC, certificateType, email=None, DNS=None, CN=None, O=None, L=N
         print(e.output)
         raise e
 
-    # Extract certificate from output
-    certFile = open('conf/CA/newcerts/01.pem', 'r')
+    # Extract certificate from PEM file
+    certFile = open('conf/CA/newcerts/' + serial + '.pem', 'r')
     lines = certFile.readlines()
     certFile.close()
+    PEMCert = ''
+    beginCert = False
+    for line in lines:
+        if line == '-----BEGIN CERTIFICATE-----\n':
+            beginCert = True
+        if beginCert:
+            PEMCert += line
 
-    return '\n'.join(lines)
+    return PEMCert
+
+
+def x509SubjectHash(PEMCert):
+    # Converts the PEM certificate string into a byte sequence
+    PEMCert = bytes(PEMCert, 'utf-8')
+
+    try:
+        proc = Popen([__OpenSSLBin, 'x509',
+                      '-subject_hash',
+                      '-noout'],
+                     stdin=PIPE, stdout=PIPE)
+
+        # Returns a tuple (stdoutdata, stderrdata)
+        output = proc.communicate(input=PEMCert)[0]
+        certHash = str(output, 'utf-8')
+    except CalledProcessError as e:
+        print(e.output)
+        raise e
+
+    # Check return code
+    if proc.returncode != 0:
+        raise Exception("Error executing OpenSSL")
+
+    return certHash
+
+
+def x509Fingerprint(PEMCert):
+    # Converts the PEM certificate string into a byte sequence
+    PEMCert = bytes(PEMCert, 'utf-8')
+
+    try:
+        proc = Popen([__OpenSSLBin, 'x509',
+                      '-fingerprint',
+                      '-noout'],
+                     stdin=PIPE, stdout=PIPE)
+
+        # Returns a tuple (stdoutdata, stderrdata)
+        output = proc.communicate(input=PEMCert)[0]
+        certFingerptin = str(output, 'utf-8')
+    except CalledProcessError as e:
+        print(e.output)
+        raise e
+
+    # Check return code
+    if proc.returncode != 0:
+        raise Exception("Error executing OpenSSL")
+
+    return certFingerptin
