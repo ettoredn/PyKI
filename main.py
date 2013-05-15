@@ -1,7 +1,7 @@
 __author__ = 'ettore'
 
 import openssl
-from bottle import install, route, view, run, request, template
+from bottle import install, route, view, run, request, response, template, redirect
 from bottle_sqlite import SQLitePlugin
 
 install(SQLitePlugin(dbfile='certificates.db'))
@@ -44,7 +44,8 @@ def generate(db):
                (certSerial, certFingerprint, certHash, PEMCert))
 
     # redirect the user to /show/<certificate hash>
-    return '<pre>Certificate:\n{}\n\nSubject Hash: {}\nFingerprint: {}'.format(PEMCert, certHash, certFingerprint)
+    redirect('/show/{}'.format(certSerial))
+    # return '<pre>Certificate:\n{}\n\nSubject Hash: {}\nFingerprint: {}'.format(PEMCert, certHash, certFingerprint)
 
 
 @route('/show/:serial', method='GET')
@@ -52,10 +53,25 @@ def show(serial, db):
     if not serial:
         return
 
-    res = db.execute('SELECT * FROM certificates WHERE serial = ?', serial)
+    res = db.execute('SELECT * FROM certificates WHERE serial = ?', (serial,))
     certificate = res.fetchone()
 
     return template('show', certificate=certificate['certificate'])
+
+
+@route('/pyki.crl')
+def showCRL():
+    crl = ''
+
+    try:
+        crl = openssl.generateCRL()
+    except BaseException as e:
+        print(e)
+
+    # Set response type to application/pkix-crl
+    response.content_type = 'application/pkix-crl'
+
+    return crl
 
 
 run(host='localhost', port='8080', debug=True)

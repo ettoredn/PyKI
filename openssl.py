@@ -130,7 +130,7 @@ def x509Fingerprint(PEMCert):
 
         # Returns a tuple (stdoutdata, stderrdata)
         output = proc.communicate(input=PEMCert)[0]
-        certFingerptin = str(output, 'utf-8')
+        certFingerprint = str(output, 'utf-8')
     except CalledProcessError as e:
         print(e.output)
         raise e
@@ -139,4 +139,33 @@ def x509Fingerprint(PEMCert):
     if proc.returncode != 0:
         raise Exception("Error executing OpenSSL")
 
-    return certFingerptin
+    return certFingerprint
+
+
+# Returns CRL in PKCS7 format
+def generateCRL():
+    try:
+        # Generate CRL in PEM format
+        check_output([__OpenSSLBin, 'ca',
+                      '-config', __OpenSSLConfig,
+                      '-gencrl',
+                      '-out',
+                      'conf/CA/crl/crl.pem'])
+
+        # Convert to PKCS7
+        crl = check_output([__OpenSSLBin, 'crl2pkcs7',
+                      '-in',
+                      'conf/CA/crl/crl.pem',
+                      '-outform',
+                      'DER'])
+    except CalledProcessError as e:
+        print(e.output)
+        raise e
+
+    # Binary string
+    return crl
+
+
+# Remove all certificates
+def clearCA():
+    return False

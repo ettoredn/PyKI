@@ -6,3 +6,4 @@ conf/CA/crl/
 conf/CA/newcerts/
 conf/CA/index*
 conf/CA/serial*
+certificates.db
