@@ -22,14 +22,14 @@ Start the builtin SSL Server in order to test the certificates
 
     openssl s_server -cert conf/CA/newcerts/01.pem -key tmp/localhost.pem -CAfile conf/CA/certificate.pem -www
 
-Converts PKCS12 certificate to PEM
-
-    openssl pkcs12 -in tmp/localhost.p12 -out tmp/localhost.pem
-
 Generate CRL in PEM format
 
     openssl ca -config conf/CA/ca-sign.conf -gencrl -out conf/CA/crl/crl.pem
 
-Convert CRL to PKCS7 format
+Convert a CRL from PEM to DER format
 
-    openssl crl2pkcs7 -in conf/CA/crl/crl.pem -out conf/CA/crl/crl.pkcs7 -outform DER
+    openssl crl -in crl.pem -outform DER -out crl.crl
+
+Convert PEM certificate to PKCS#12 file without private key
+
+    openssl pkcs12 -export -in conf/CA/newcerts/01.pem -nokeys -name "My Cert"

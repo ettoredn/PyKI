@@ -79,6 +79,7 @@ def signSPKAC(SPKAC, certificateType, serial, email=None, DNS=None, CN=None, O=N
         print(e.output)
         raise e
 
+    # TODO Redirect to show page where the cert can be downloaded in various formats
     # Extract certificate from PEM file
     certFile = open('conf/CA/newcerts/' + serial + '.pem', 'r')
     lines = certFile.readlines()
@@ -142,7 +143,7 @@ def x509Fingerprint(PEMCert):
     return certFingerprint
 
 
-# Returns CRL in PKCS7 format
+# Returns CRL in DER format
 def generateCRL():
     try:
         # Generate CRL in PEM format
@@ -152,8 +153,8 @@ def generateCRL():
                       '-out',
                       'conf/CA/crl/crl.pem'])
 
-        # Convert to PKCS7
-        crl = check_output([__OpenSSLBin, 'crl2pkcs7',
+        # Convert to DER format
+        crl = check_output([__OpenSSLBin, 'crl',
                       '-in',
                       'conf/CA/crl/crl.pem',
                       '-outform',
@@ -168,4 +169,17 @@ def generateCRL():
 
 # Remove all certificates
 def clearCA():
-    return False
+    # Clear CA database
+    try:
+        os.remove('conf/CA/index.txt.attr')
+        os.remove('conf/CA/index.txt.old')
+        os.remove('conf/CA/serial.old')
+        # TODO remove all files in conf/CA/newcerts
+        # TODO Clear database
+    except FileNotFoundError as e:
+        print(e)
+    indexFile = open('conf/CA/index.txt', 'w')
+    indexFile.write('')
+    indexFile.close()
+
+    return 'Done'
