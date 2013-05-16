@@ -50,23 +50,16 @@ def generate(db):
     certHash = openssl.x509SubjectHash(PEMCert)
 
     # Store into the database
-    db.execute('INSERT INTO certificates (serial,fingerprint,subject_hash,certificate) VALUES(?, ?, ?, ?)',
-               (certSerial, certFingerprint, certHash, PEMCert))
+    if type == "sslserver":
+        commonName = dns
+    elif type == "smime":
+        commonName = email
+    db.execute(
+        'INSERT INTO certificates (serial,fingerprint,subject_hash,type,common_name,certificate)' +
+        'VALUES(?, ?, ?, ?, ?, ?)', (certSerial, certFingerprint, certHash, type, commonName, PEMCert))
 
-    # redirect the user to /show/<certificate hash>
-    redirect('/show/{}'.format(certSerial))
-    # return '<pre>Certificate:\n{}\n\nSubject Hash: {}\nFingerprint: {}'.format(PEMCert, certHash, certFingerprint)
-
-
-@route('/show/:serial', method='GET')
-def show(serial, db):
-    if not serial:
-        return
-
-    res = db.execute('SELECT * FROM certificates WHERE serial = ?', (serial,))
-    certificate = res.fetchone()
-
-    return template('show', certificate=certificate['certificate'], serial=serial)
+    # redirect to index
+    redirect('/')
 
 
 @route('/download/:serial')
@@ -82,19 +75,31 @@ def download(serial, db):
 
     # http://pki-tutorial.readthedocs.org/en/latest/mime.html
     if certFormat == "pem":
+        # Set MIME header
         response.content_type = 'application/x-pem-file'
 
         return PEMCertificate
     elif certFormat == "cer":
+        DERCertificate = openssl.PEMtoDER(PEMCertificate)
+
+        # Set MIME header
         response.content_type = 'application/pkix-cert'
 
-        # TODO Convert to DER
-        raise Exception('Not implemented')
+        return DERCertificate
     elif certFormat == "p7c":
+        PKCS7Certificate = openssl.PEMtoPKCS7(PEMCertificate)
+
+        # Set MIME header
         response.content_type = 'application/pkcs7-mime'
 
-        # TODO Convert to PKCS7
-        raise Exception('Not implemented')
+        return PKCS7Certificate
+    elif certFormat == "p12":
+        PKCS12Certificate = openssl.PEMtoPKCS12(PEMCertificate)
+
+        # Set MIME header
+        response.content_type = 'application/x-pkcs12'
+
+        return PKCS12Certificate
     else:
         raise Exception('Unknown certificate type {}'.format(certFormat))
 
@@ -114,9 +119,35 @@ def showCRL():
 
 
 @route('/clear')
-def clearCA():
-    # TODO Clear all certificates, index files, etc
-    return None
+def clearCA(db):
+    try:
+        if os.path.exists('conf/CA/index.txt.attr'):
+            os.remove('conf/CA/index.txt.attr')
+        if os.path.exists('conf/CA/index.txt.attr.old'):
+            os.remove('conf/CA/index.txt.attr.old')
+        if os.path.exists('conf/CA/index.txt.old'):
+            os.remove('conf/CA/index.txt.old')
+        if os.path.exists('conf/CA/serial.old'):
+            os.remove('conf/CA/serial.old')
+
+        for cert in os.listdir('conf/CA/newcerts'):
+            if not cert.endswith('.pem'):
+                continue
+
+            os.remove('conf/CA/newcerts/{}'.format(cert))
+
+    except FileNotFoundError as e:
+        print(e)
+
+    # Clear index file
+    indexFile = open('conf/CA/index.txt', 'w')
+    indexFile.write('')
+    indexFile.close()
+
+    # Clear database
+    db.execute('DELETE FROM certificates')
+
+    return 'Done'
 
 
 run(host='localhost', port='8080', debug=True)

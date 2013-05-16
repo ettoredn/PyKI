@@ -167,19 +167,71 @@ def generateCRL():
     return crl
 
 
-# Remove all certificates
-def clearCA():
-    # Clear CA database
-    try:
-        os.remove('conf/CA/index.txt.attr')
-        os.remove('conf/CA/index.txt.old')
-        os.remove('conf/CA/serial.old')
-        # TODO remove all files in conf/CA/newcerts
-        # TODO Clear database
-    except FileNotFoundError as e:
-        print(e)
-    indexFile = open('conf/CA/index.txt', 'w')
-    indexFile.write('')
-    indexFile.close()
+# Convert a x509 certificate from PEM to DER format
+def PEMtoDER(PEMCert):
+    PEMCert = bytes(PEMCert, 'utf-8')
 
-    return 'Done'
+    try:
+        proc = Popen([__OpenSSLBin, 'x509',
+                      '-inform',
+                      'PEM',
+                      '-outform',
+                      'DER'],
+                     stdin=PIPE, stdout=PIPE)
+
+        # Returns a tuple (stdoutdata, stderrdata)
+        output, stderr = proc.communicate(input=PEMCert)
+        return output
+    except CalledProcessError as e:
+        print(e.output)
+        raise e
+
+
+# Create a PKCS#7 bundle from a x509 certificate in PEM format
+def PEMtoPKCS7(PEMCert):
+    # crl2pkcs7 doesn't support certfiles from stdin
+    certFile = open('tmp/cert.pem', 'w')
+    certFile.write(PEMCert)
+    certFile.close()
+
+    if not os.path.exists('conf/CA/certificate.pem'):
+        raise Exception('Unable to find CA certificate in conf/CA/certificate.pem')
+
+    # Create PKCS7 including CA certificate
+    try:
+        pkcs7 = check_output([__OpenSSLBin, 'crl2pkcs7',
+              '-nocrl',
+              # '-certfile',
+              # 'conf/CA/certificate.pem',
+              '-certfile',
+              'tmp/cert.pem',
+              '-outform',
+              'DER'])
+    except CalledProcessError as e:
+        print(e.output)
+        raise e
+
+    return pkcs7
+
+
+# Created a PKCS#12 bundle from a x509 certificate in PEM format
+def PEMtoPKCS12(PEMCert):
+    PEMCert = bytes(PEMCert, 'utf-8')
+
+    try:
+        # openssl pkcs12 -export -in conf/CA/newcerts/01.pem -nokeys -name "My Cert"
+        proc = Popen([__OpenSSLBin, 'pkcs12',
+                      '-export',
+                      '-nokeys',
+                      '-passout',
+                      'pass:pyki',
+                      '-name',
+                      'Pretty Name'],
+                     stdin=PIPE, stdout=PIPE)
+
+        # Returns a tuple (stdoutdata, stderrdata)
+        output, stderr = proc.communicate(input=PEMCert)
+        return output
+    except CalledProcessError as e:
+        print(e.output)
+        raise e

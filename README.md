@@ -30,6 +30,14 @@ Convert a CRL from PEM to DER format
 
     openssl crl -in crl.pem -outform DER -out crl.crl
 
+Convert PEM certificate to DER format
+
+    openssl x509 -in cert.pem -inform PEM -out cert.der -outform DER
+
+Create a PKCS#7 bundle form multiple certificates in PEM format
+
+    openssl crl2pkcs7 -nocrl -certfile tmp/cert.pem -certfile conf/CA/certificate.pem -outform der
+
 Convert PEM certificate to PKCS#12 file without private key
 
     openssl pkcs12 -export -in conf/CA/newcerts/01.pem -nokeys -name "My Cert"

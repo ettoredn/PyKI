@@ -9,7 +9,7 @@
 </head>
 <body>
 <p>
-    <h3>Generate</h3>
+    <h2>Generate</h2>
     <form action="/generate" method="post">
         <label for="type">Type:</label>
         <select name="type">
@@ -36,16 +36,19 @@
     </form>
 </p>
 <p>
-    <h3>Certificates</h3>
+    <h2>Certificates</h2>
     {% for serial in serials %}
         <div>{{ serial }}
             <a href="/download/{{ serial }}.pem">PEM</a>
             <a href="/download/{{ serial }}.cer">DER</a>
             <a href="/download/{{ serial }}.p7c">PKCS#7</a>
+            <a href="/download/{{ serial }}.p12">PKCS#12</a>
+        </div>
     {% endfor %}
+    <p>Password for PKCS#12 files is 'pyki'</p>
 </p>
 <p>
-    <h3>CA Commands</h3>
+    <h2>CA Commands</h2>
     <a href="/clear">Clear CA</a>
 </p>
 </body>
