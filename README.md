@@ -1,3 +1,8 @@
+## Setup
+Copy certificates.db.dist to certificates.db
+
+## Useful OpenSSL commands
+
 Generate CA private key:
 
     openssl genrsa -out private/cakey.pem 4096

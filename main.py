@@ -13,16 +13,16 @@ challenge = "Should be a random generated string"
 
 @route('/')
 def index(db):
-    serials = []
+    certs = []
 
     # Retrieve certificate serials
-    res = db.execute('SELECT serial FROM certificates')
+    res = db.execute('SELECT serial,type,common_name FROM certificates')
     row = res.fetchone()
     while row:
-        serials.append(row[0])
+        certs.append(row)
         row = res.fetchone()
 
-    return template('index', challenge=challenge, serials=serials)
+    return template('index', challenge=challenge, certs=certs)
 
 
 @route('/generate', method='POST')

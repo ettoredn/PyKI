@@ -5,6 +5,9 @@
         input, keygen, select {
             display: block;
         }
+        a:visited {
+            color: blue;
+        }
     </style>
 </head>
 <body>
@@ -37,12 +40,14 @@
 </p>
 <p>
     <h2>Certificates</h2>
-    {% for serial in serials %}
-        <div>{{ serial }}
-            <a href="/download/{{ serial }}.pem">PEM</a>
-            <a href="/download/{{ serial }}.cer">DER</a>
-            <a href="/download/{{ serial }}.p7c">PKCS#7</a>
-            <a href="/download/{{ serial }}.p12">PKCS#12</a>
+    {% for cert in certs %}
+        <div>
+            <span style="margin-right: 20px;">{{ cert.common_name }}</span>
+            <span style="margin-right: 20px;">{{ cert.type|upper }}</span>
+            <a href="/download/{{ cert.serial }}.pem">PEM</a>
+            <a href="/download/{{ cert.serial }}.cer">DER</a>
+            <a href="/download/{{ cert.serial }}.p7c">PKCS#7</a>
+            <a href="/download/{{ cert.serial }}.p12">PKCS#12</a>
         </div>
     {% endfor %}
     <p>Password for PKCS#12 files is 'pyki'</p>
