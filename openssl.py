@@ -54,19 +54,10 @@ def signSPKAC(SPKAC, certificateType, serial, email=None, DNS=None, CN=None, O=N
     extFile.write(__x509Extensions[certificateType].format(CN))
     extFile.close()
 
-    # Clear CA database
-    # try:
-    #     os.remove('conf/CA/index.txt.attr')
-    #     os.remove('conf/CA/index.txt.old')
-    #     os.remove('conf/CA/serial.old')
-    # except FileNotFoundError as e:
-    #     print(e)
+    # Write serial
     serialFile = open('conf/CA/serial', 'w')
     serialFile.write(serial + '\n')
     serialFile.close()
-    # indexFile = open('conf/CA/index.txt', 'w')
-    # indexFile.write('')
-    # indexFile.close()
 
     # Sign the request
     try:
