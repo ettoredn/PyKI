@@ -70,7 +70,6 @@ def signSPKAC(SPKAC, certificateType, serial, email=None, DNS=None, CN=None, O=N
         print(e.output)
         raise e
 
-    # TODO Redirect to show page where the cert can be downloaded in various formats
     # Extract certificate from PEM file
     certFile = open('conf/CA/newcerts/' + serial + '.pem', 'r')
     lines = certFile.readlines()

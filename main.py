@@ -35,7 +35,7 @@ def generate(db):
     locality = request.forms.get('locality')
     country = request.forms.get('country')
 
-    # DER encoded
+    # PEM encoded
     spkac = request.forms.get('key')
 
     # Calculate serial
