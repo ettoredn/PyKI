@@ -43,6 +43,10 @@ def signSPKAC(SPKAC, certificateType, serial, email=None, DNS=None, CN=None, O=N
             # Force CN = email
         CN = email
 
+    # Some browsers e.g. Mozilla add newlines
+    SPKAC = SPKAC.replace("\n", "")
+    SPKAC = SPKAC.replace("\r", "")
+
     # Generate SPKAC text file
     spkacFile = open('tmp/spkac.txt', 'w')
     spkacRequest = 'SPKAC={}\nCN={}\nO={}\nL={}\nC={}'.format(SPKAC, CN, O, L, C)
