@@ -44,10 +44,10 @@ def generate(db):
 
     print('Serial: {}'.format(certSerial))
 
-    PEMCert = openssl.signSPKAC(spkac, type, certSerial, email=email, DNS=dns, CN=commonName, O=organization,
+    PEMCertificate = openssl.signSPKAC(spkac, type, certSerial, email=email, DNS=dns, CN=commonName, O=organization,
                                 L=locality, C=country)
-    certFingerprint = openssl.x509Fingerprint(PEMCert)
-    certHash = openssl.x509SubjectHash(PEMCert)
+    certFingerprint = openssl.x509Fingerprint(PEMCertificate)
+    certHash = openssl.x509SubjectHash(PEMCertificate)
 
     # Store into the database
     if type == "sslserver":
@@ -56,10 +56,13 @@ def generate(db):
         commonName = email
     db.execute(
         'INSERT INTO certificates (serial,fingerprint,subject_hash,type,common_name,certificate)' +
-        'VALUES(?, ?, ?, ?, ?, ?)', (certSerial, certFingerprint, certHash, type, commonName, PEMCert))
+        'VALUES(?, ?, ?, ?, ?, ?)', (certSerial, certFingerprint, certHash, type, commonName, PEMCertificate))
 
-    # redirect to index
-    redirect('/')
+    # Make the browser install the certificate in DER format
+    DERCertificate = openssl.PEMtoDER(PEMCertificate)
+    response.content_type = 'application/x-x509-user-cert'
+
+    return DERCertificate
 
 
 @route('/download/:serial')
